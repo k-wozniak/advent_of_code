@@ -12,6 +12,13 @@ fn main() {
 
     let valid_report: usize = reports.iter().filter(|r| is_valid(r)).count();
     println!("Valid reports: {}", valid_report);
+
+    let valid_with_dampener_report: usize =
+        reports.iter().filter(|r| is_valid_with_dampener(r)).count();
+    println!(
+        "Valid with dampener reports: {}",
+        valid_with_dampener_report
+    );
 }
 
 fn is_valid(report: &[i32]) -> bool {
@@ -26,16 +33,21 @@ fn is_valid(report: &[i32]) -> bool {
     r && (is_increasing || is_decreasing)
 }
 
+// Very inefficient, but works for the input size.
 fn is_valid_with_dampener(report: &[i32]) -> bool {
-    let r = report
-        .windows(2) // Sliding window of size 2
-        .map(|window| (window[0] - window[1]).abs()) // Find the difference between the two.
-        .all(|diff| diff > 0 && diff <= 3); // Check if the difference is not 0 and max 2.
+    if is_valid(report) {
+        return true;
+    }
 
-    let is_increasing = report.windows(2).all(|window| window[0] < window[1]);
-    let is_decreasing = report.windows(2).all(|window| window[0] > window[1]);
+    for i in 0..report.len() {
+        let mut modified_report = report.to_vec();
+        modified_report.remove(i);
+        if is_valid(&modified_report) {
+            return true;
+        }
+    }
 
-    r && (is_increasing || is_decreasing)
+    false
 }
 
 #[cfg(test)]
