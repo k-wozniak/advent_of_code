@@ -2,11 +2,15 @@ use regex::Regex;
 
 fn main() {
     // Read the file into a single string.
-    let program_memory = std::fs::read_to_string("./src/input.txt").unwrap();
+    let mut program_memory = std::fs::read_to_string("./src/input.txt").unwrap();
+    program_memory.retain(|c| !c.is_whitespace());
+
+    let reduced_program_memory = remove_disabled_instructions(&program_memory);
 
     println!(
-        "Sum of products: {}",
-        sum_of_valid_instruction(&program_memory)
+        "Sum of products: {}, Sum of produces reduced: {}.",
+        sum_of_valid_instruction(&program_memory),
+        sum_of_valid_instruction(&reduced_program_memory)
     );
 }
 
@@ -22,6 +26,11 @@ fn sum_of_valid_instruction(program_memory: &str) -> i32 {
         .map(|(a, b)| (a.parse::<i32>().unwrap(), b.parse::<i32>().unwrap()))
         .map(|(a, b)| a * b)
         .sum()
+}
+
+fn remove_disabled_instructions(program_memory: &str) -> String {
+    let re = Regex::new(r"don't\(\).+?do\(\)").unwrap();
+    re.replace_all(program_memory, "").into_owned()
 }
 
 #[cfg(test)]
@@ -43,7 +52,8 @@ mod tests {
         let program_memory =
             r"xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
 
-        let result = sum_of_valid_instruction(program_memory);
+        let reduced = remove_disabled_instructions(program_memory);
+        let result = sum_of_valid_instruction(&reduced);
 
         assert_eq!(result, 48);
     }
