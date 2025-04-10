@@ -32,6 +32,11 @@ fn main() {
         "Middle value sum of valid pages: {}",
         filter_pages(&pages_to_produce, &page_ordering_rules)
     );
+
+    println!(
+        "Middle value sum of INvalid pages: {}",
+        filter_invalid_pages(&pages_to_produce, &page_ordering_rules)
+    );
 }
 
 fn filter_pages(pages_to_produce: &[Vec<u32>], ordering_rules: &HashMap<u32, Vec<u32>>) -> u32 {
@@ -39,6 +44,30 @@ fn filter_pages(pages_to_produce: &[Vec<u32>], ordering_rules: &HashMap<u32, Vec
         .iter()
         .filter(|page| validate(page, ordering_rules))
         .map(|page| page[page.len() / 2])
+        .sum()
+}
+
+fn filter_invalid_pages(
+    pages_to_produce: &[Vec<u32>],
+    ordering_rules: &HashMap<u32, Vec<u32>>,
+) -> u32 {
+    pages_to_produce
+        .iter()
+        .filter(|page| !validate(page, ordering_rules))
+        .map(|page| {
+            let mut p = page.clone();
+            p.sort_by(|a, b| {
+                let empty_vec = vec![];
+                if ordering_rules.get(a).unwrap_or(&empty_vec).contains(b) {
+                    return std::cmp::Ordering::Greater;
+                }
+                if ordering_rules.get(b).unwrap_or(&empty_vec).contains(a) {
+                    return std::cmp::Ordering::Less;
+                }
+                std::cmp::Ordering::Equal
+            });
+            p[p.len() / 2]
+        })
         .sum()
 }
 
@@ -81,5 +110,32 @@ mod tests {
         .collect();
 
         assert_eq!(143, filter_pages(&pages_to_produce, &page_ordering_rules));
+    }
+
+    #[test]
+    fn test_invalid_pages() {
+        let pages_to_produce: Vec<Vec<u32>> = vec![
+            vec![75, 47, 61, 53, 29],
+            vec![97, 61, 53, 29, 13],
+            vec![75, 29, 13],
+            vec![75, 97, 47, 61, 53],
+            vec![61, 13, 29],
+            vec![97, 13, 75, 29, 47],
+        ];
+
+        let page_ordering_rules: HashMap<u32, Vec<u32>> = vec![
+            (13, vec![53, 75, 47, 29, 61, 97]),
+            (29, vec![47, 61, 53, 97, 75]),
+            (53, vec![97, 61, 75, 47]),
+            (61, vec![75, 47, 97]),
+            (75, vec![97]),
+        ]
+        .into_iter()
+        .collect();
+
+        assert_eq!(
+            123,
+            filter_invalid_pages(&pages_to_produce, &page_ordering_rules)
+        );
     }
 }
