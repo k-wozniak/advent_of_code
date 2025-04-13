@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 fn main() {
     let mut map: Vec<Vec<char>> = std::fs::read_to_string("./src/map.txt")
         .unwrap()
@@ -23,9 +25,18 @@ fn main() {
         })
         .expect("No starting position found");
 
-    println!("The number of steps: {}", solve(&mut map, start_position));
+    println!(
+        "Number of possible loops: {}",
+        how_many_loops(map.clone(), start_position)
+    );
+
+    println!(
+        "The number of steps: {}",
+        solve(&mut map, start_position).unwrap()
+    );
 }
 
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
 struct Position {
     x: i32,
     y: i32,
@@ -52,6 +63,7 @@ impl Position {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Hash, Clone, Copy)]
 enum Direction {
     Up,
     Down,
@@ -59,7 +71,31 @@ enum Direction {
     Right,
 }
 
-fn solve(map: &mut [Vec<char>], mut pos: Position) -> usize {
+fn how_many_loops(mut map: Vec<Vec<char>>, pos: Position) -> usize {
+    let base_map: Vec<Vec<char>> = map.clone();
+    solve(&mut map, pos).unwrap(); // This must be successful but we don't care about the outcome.
+
+    let mut loops = 0;
+
+    for (y, row) in map.iter().enumerate() {
+        for (x, &cell) in row.iter().enumerate() {
+            if cell == '*' {
+                let mut temp_map = base_map.clone();
+                temp_map[y][x] = '#';
+
+                if solve(&mut temp_map, pos).is_none() {
+                    loops += 1;
+                }
+            }
+        }
+    }
+
+    loops
+}
+
+fn solve(map: &mut [Vec<char>], mut pos: Position) -> Option<usize> {
+    let mut visited: HashSet<Position> = HashSet::new();
+
     // Mark started position as visited.
     map[pos.y as usize][pos.x as usize] = '*';
 
@@ -83,10 +119,16 @@ fn solve(map: &mut [Vec<char>], mut pos: Position) -> usize {
             pos.x = lookup.0;
             pos.y = lookup.1;
             map[pos.y as usize][pos.x as usize] = '*';
+
+            if visited.contains(&pos) {
+                return None;
+            }
+
+            visited.insert(pos);
         }
     }
 
-    map.iter().flatten().filter(|&&c| c == '*').count()
+    Some(map.iter().flatten().filter(|&&c| c == '*').count())
 }
 
 #[cfg(test)]
@@ -114,6 +156,30 @@ mod tests {
             direction: Direction::Up,
         };
 
-        assert_eq!(41, solve(&mut map, pos));
+        assert_eq!(41, solve(&mut map, pos).unwrap());
+    }
+
+    #[test]
+    fn test_part2() {
+        let map: Vec<Vec<char>> = vec![
+            vec!['.', '.', '.', '.', '#', '.', '.', '.', '.', '.'],
+            vec!['.', '.', '.', '.', '.', '.', '.', '.', '.', '#'],
+            vec!['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+            vec!['.', '.', '#', '.', '.', '.', '.', '.', '.', '.'],
+            vec!['.', '.', '.', '.', '.', '.', '.', '#', '.', '.'],
+            vec!['.', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+            vec!['.', '#', '.', '.', '^', '.', '.', '.', '.', '.'],
+            vec!['.', '.', '.', '.', '.', '.', '.', '.', '#', '.'],
+            vec!['#', '.', '.', '.', '.', '.', '.', '.', '.', '.'],
+            vec!['.', '.', '.', '.', '.', '.', '#', '.', '.', '.'],
+        ];
+
+        let pos = Position {
+            x: 4,
+            y: 6,
+            direction: Direction::Up,
+        };
+
+        assert_eq!(6, how_many_loops(map, pos));
     }
 }
