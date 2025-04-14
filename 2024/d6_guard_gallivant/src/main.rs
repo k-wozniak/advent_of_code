@@ -44,12 +44,16 @@ struct Position {
 }
 
 impl Position {
-    fn next_lookup(&self) -> (i32, i32) {
+    fn new(x: i32, y: i32, direction: Direction) -> Position {
+        Self { x, y, direction }
+    }
+
+    fn next_lookup(&self) -> Position {
         match self.direction {
-            Direction::Up => (self.x, self.y - 1),
-            Direction::Down => (self.x, self.y + 1),
-            Direction::Left => (self.x - 1, self.y),
-            Direction::Right => (self.x + 1, self.y),
+            Direction::Up => Position::new(self.x, self.y - 1, self.direction),
+            Direction::Down => Position::new(self.x, self.y + 1, self.direction),
+            Direction::Left => Position::new(self.x - 1, self.y, self.direction),
+            Direction::Right => Position::new(self.x + 1, self.y, self.direction),
         }
     }
 
@@ -103,21 +107,18 @@ fn solve(map: &mut [Vec<char>], mut pos: Position) -> Option<usize> {
         let lookup = pos.next_lookup();
 
         // Check if time to exit.
-        if lookup.0 < 0
-            || lookup.1 < 0
-            || lookup.0 >= map[0].len() as i32
-            || lookup.1 >= map.len() as i32
+        if lookup.x < 0
+            || lookup.y < 0
+            || lookup.x >= map[0].len() as i32
+            || lookup.y >= map.len() as i32
         {
             break 'walk;
         }
 
-        let c = map[lookup.1 as usize][lookup.0 as usize];
-
-        if c == '#' {
+        if map[lookup.y as usize][lookup.x as usize] == '#' {
             pos.rotate();
         } else {
-            pos.x = lookup.0;
-            pos.y = lookup.1;
+            pos = lookup;
             map[pos.y as usize][pos.x as usize] = '*';
 
             if visited.contains(&pos) {
