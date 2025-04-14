@@ -52,27 +52,21 @@ fn solve2(target: i64, current: i64, numbers: &[i64]) -> bool {
     match numbers.split_first() {
         None => target == current,
         Some((&first, rest)) => {
-            // Addition
-            let add_result = current + first;
-            if solve2(target, add_result, rest) {
+            if solve2(target, current + first, rest) {
                 return true;
             }
 
-            // Multiplication
-            let mult_result = current * first;
-            if solve2(target, mult_result, rest) {
+            if solve2(target, current * first, rest) {
                 return true;
             }
 
             // Concatenation
-            if current == 0 {
-                let concat_result = first;
-                if solve2(target, concat_result, rest) {
-                    return true;
-                }
+            if current == 0 && solve2(target, first, rest) {
+                return true;
             } else {
                 let n_digits = (first.abs() as f64).log10().floor() as u32 + 1;
                 let concat_result = current * 10i64.pow(n_digits) + first;
+
                 if solve2(target, concat_result, rest) {
                     return true;
                 }
