@@ -14,6 +14,7 @@ fn main() {
 
 fn process_map(antennas_str: &str) -> HashSet<(usize, usize)> {
     let mut antennas: HashMap<char, Vec<(usize, usize)>> = HashMap::new();
+
     for (row_idx, line) in antennas_str.lines().enumerate() {
         for (col_idx, ch) in line.chars().enumerate() {
             if ch != '.' {
@@ -23,17 +24,8 @@ fn process_map(antennas_str: &str) -> HashSet<(usize, usize)> {
     }
 
     // Find the maximum row and column indices.
-    let max_row = antennas
-        .values()
-        .flat_map(|v| v.iter().map(|&(r, _)| r))
-        .max()
-        .unwrap();
-
-    let max_col = antennas
-        .values()
-        .flat_map(|v| v.iter().map(|&(_, c)| c))
-        .max()
-        .unwrap();
+    let max_row = antennas_str.lines().count() - 1;
+    let max_col = antennas_str.lines().next().map(|line| line.len()).unwrap() - 1;
 
     find_antinodes(
         &antennas.values().flat_map(|v| v.iter().cloned()).collect(),
@@ -68,8 +60,8 @@ fn find_antinodes_for_antenna(
     let mut antinodes = HashSet::new();
 
     for (row, col) in antennas {
-        let x = antenna.0 as isize - *row as isize;
-        let y = antenna.1 as isize - *col as isize;
+        let dx = (antenna.0 as isize - *row as isize).abs();
+        let dy = (antenna.1 as isize - *col as isize).abs();
 
         // Check if the current position is a valid antinode.
         if x >= 0 && y >= 0 {
@@ -92,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_example_input() {
-        let input = "\
+        let input = r"
 ............
 ........0...
 .....0......
@@ -104,8 +96,9 @@ mod tests {
 ........A...
 .........A..
 ............
-............
-";
+............";
+
+        let input = input.trim();
 
         let antinodes = process_map(input);
 
